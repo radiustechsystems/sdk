@@ -38,5 +38,4 @@ jobs:
         with:
           version: v1.55.2
           working-directory: ./go
-          only-new-issues: true
-          args: --timeout=5m
+          args: --timeout=5m --path-prefix=./go
