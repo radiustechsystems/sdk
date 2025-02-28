@@ -1,6 +1,11 @@
 {
   "name": "@radiustechsystems/sdk",
   "version": "1.0.0",
+  "description": "TypeScript SDK for interacting with the Radius Platform for smart contracts, automation, and payments",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radiustechsystems/sdk.git"
+  },
   "type": "module",
   "scripts": {
     "build": "tsup",
@@ -16,7 +21,8 @@
     "test:integration:watch": "vitest integration",
     "change:add": "changeset add",
     "change:publish": "pnpm build:prod && changeset publish --no-git-tag",
-    "change:version": "changeset version && pnpm lint:fix"
+    "change:version": "changeset version && pnpm lint:fix",
+    "prepublishOnly": "pnpm build:prod"
   },
   "dependencies": {
     "ethers": "6.13.5"
@@ -48,5 +54,24 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist"
-  ]
+  ],
+  "keywords": [
+    "radius",
+    "evm",
+    "automation",
+    "contract",
+    "payment",
+    "transaction",
+    "ethereum",
+    "crypto",
+    "sdk",
+    "ai"
+  ],
+  "homepage": "https://github.com/radiustechsystems/sdk/typescript#readme",
+  "bugs": {
+    "url": "https://github.com/radiustechsystems/sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

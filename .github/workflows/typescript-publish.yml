@@ -1,0 +1,73 @@
+name: TypeScript SDK Publish
+
+on:
+  push:
+    tags:
+      - 'ts-v*.*.*'
+
+jobs:
+  publish:
+    name: Build and Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for provenance
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if tag is on main branch
+        run: |
+          if ! git branch -r --contains ${{ github.ref }} | grep -q 'origin/main$'; then
+            echo "Tag is not on main branch. Aborting."
+            exit 1
+          fi
+
+      - name: Extract version from tag
+        id: extract_version
+        run: |
+          # Extract version from ts-v*.*.* format
+          TAG=${{ github.ref_name }}
+          VERSION=${TAG#ts-v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '9'
+          run_install: false
+      
+      - name: Install dependencies
+        working-directory: typescript
+        run: pnpm install
+      
+      - name: Run linters
+        working-directory: typescript
+        run: pnpm lint
+      
+      - name: Run tests
+        working-directory: typescript
+        run: pnpm test
+      
+      - name: Update version in package.json
+        working-directory: typescript
+        run: |
+          # Use jq to update the version in package.json
+          jq '.version = "${{ steps.extract_version.outputs.version }}"' package.json > package.json.tmp
+          mv package.json.tmp package.json
+      
+      - name: Build package
+        working-directory: typescript
+        run: pnpm build:prod
+      
+      - name: Publish to NPM
+        working-directory: typescript
+        run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
