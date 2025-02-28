@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noEmitOnError": false,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ES2022", "DOM", "WebWorker"],
+    "noErrorTruncation": true,
+    "outDir": "dist",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": ".",
+    "paths": {
+      "@radiustechsystems/sdk": ["./radius/index.ts"],
+      "@radiustechsystems/sdk/*": ["./radius/*"]
+    },
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*", "radius/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+}

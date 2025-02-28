@@ -1,0 +1,52 @@
+{
+  "name": "@radiustechsystems/sdk",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "build:prod": "cross-env NODE_ENV=production tsup",
+    "clean": "rimraf dist",
+    "lint": "biome check .",
+    "lint:fix": "biome check --apply .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "test": "vitest --run",
+    "test:integration": "vitest integration --run",
+    "test:watch": "vitest",
+    "test:integration:watch": "vitest integration",
+    "change:add": "changeset add",
+    "change:publish": "pnpm build:prod && changeset publish --no-git-tag",
+    "change:version": "changeset version && pnpm lint:fix"
+  },
+  "dependencies": {
+    "ethers": "6.13.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.5.3",
+    "@changesets/cli": "2.27.10",
+    "@types/node": "22.7.4",
+    "cross-env": "7.0.3",
+    "rimraf": "6.0.1",
+    "tsup": "8.3.5",
+    "typescript": "5.3.3",
+    "vitest": "3.0.5"
+  },
+  "engines": {
+    "node": ">=20.12.2 <23",
+    "pnpm": ">=9"
+  },
+  "license": "MIT",
+  "packageManager": "pnpm@9.14.2",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ]
+}
