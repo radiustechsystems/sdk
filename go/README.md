@@ -18,7 +18,7 @@ idiomatic way to interact with Radius services.
 ## Installation
 
 ```bash
-go get github.com/radiustechsystems/sdk/go/radius
+go get github.com/radiustechsystems/sdk/go
 go mod tidy
 ```
 
