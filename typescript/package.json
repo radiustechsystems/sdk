@@ -19,11 +19,6 @@
     "test:integration": "vitest integration --run",
     "test:watch": "vitest",
     "test:integration:watch": "vitest integration",
-    "change:add": "changeset add",
-    "change:publish": "pnpm build:prod && changeset publish --no-git-tag",
-    "change:version": "changeset version && pnpm lint:fix",
-    "ci:publish": "pnpm build:prod && pnpm publish -r --access=public",
-    "prepublishOnly": "pnpm build:prod"
   },
   "dependencies": {
     "ethers": "6.13.5"
