@@ -1,19 +1,11 @@
 import { Account } from '../src/accounts';
 import type { AccountOption } from '../src/accounts';
 import { withPrivateKey, withSigner } from '../src/accounts';
-import { ClefSigner } from '../src/auth';
-import { PrivateKeySigner } from '../src/auth';
-import type { Signer, SignerClient } from '../src/auth';
-import { Client } from '../src/client';
-import type { ClientOption } from '../src/client';
+import { ClefSigner, PrivateKeySigner, Signer, SignerClient } from '../src/auth';
+import { Client, ClientOption } from '../src/client';
 import { withHttpClient, withInterceptor, withLogger } from '../src/client';
-import { ABI } from '../src/common';
-import { Address } from '../src/common';
-import { Event } from '../src/common';
-import { Hash } from '../src/common';
-import { Receipt } from '../src/common';
+import { ABI, Address, Event, Hash, HttpClient, Receipt, Transaction } from '../src/common';
 import type { SignedTransaction } from '../src/common';
-import { Transaction } from '../src/common';
 import {
   abiFromJSON as ABIFromJSON,
   addressFromHex as AddressFromHex,
@@ -22,6 +14,7 @@ import {
   zeroAddress,
 } from '../src/common';
 import { Contract } from '../src/contracts';
+import type { BigNumberish, BytesLike } from '../src/providers/eth';
 import type { Interceptor, Logf } from '../src/transport';
 
 // Re-export classes
@@ -40,7 +33,16 @@ export {
 };
 
 // Re-export types
-export type { Interceptor, Logf, Signer, SignerClient, SignedTransaction };
+export type {
+  BigNumberish,
+  BytesLike,
+  HttpClient,
+  Interceptor,
+  Logf,
+  Signer,
+  SignerClient,
+  SignedTransaction,
+};
 
 // Re-export functions
 export {

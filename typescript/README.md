@@ -14,7 +14,6 @@ way to interact with the Radius platform.
 ## Requirements
 
 - Node.js >= 20.12.2
-- npm, yarn, or pnpm
 
 ## Installation
 
@@ -62,7 +61,7 @@ console.log('Transaction hash:', receipt.txHash.hex());
 import { ABIFromJSON, BytecodeFromHex } from '@radiustechsystems/sdk';
 
 // Parse ABI and bytecode
-const abi = new ABIFromJSON(`[{"inputs":[],"name":"get","outputs":[{"type":"uint256"}],"type":"function"},{"inputs":[{"type":"uint256"}],"name":"set","type":"function"}]`);
+const abi = ABIFromJSON(`[{"inputs":[],"name":"get","outputs":[{"type":"uint256"}],"type":"function"},{"inputs":[{"type":"uint256"}],"name":"set","type":"function"}]`);
 const bytecode = BytecodeFromHex('608060405234801561001057600080fd5b50610150806100...');
 
 // Deploy the contract
@@ -76,7 +75,7 @@ import { NewContract, AddressFromHex, ABIFromJSON } from '@radiustechsystems/sdk
 
 // Reference an existing contract
 const address = AddressFromHex('0x...');
-const abi = new ABIFromJSON(`[{"inputs":[],"name":"get","outputs":[{"type":"uint256"}],"type":"function"},{"inputs":[{"type":"uint256"}],"name":"set","type":"function"}]`);
+const abi = ABIFromJSON(`[{"inputs":[],"name":"get","outputs":[{"type":"uint256"}],"type":"function"},{"inputs":[{"type":"uint256"}],"name":"set","type":"function"}]`);
 const contract = NewContract(address, abi);
 
 // Write to the contract
@@ -93,16 +92,18 @@ console.log('Stored value:', result[0]);
 ### Custom Transaction Signing
 
 ```typescript
-import { NewClefSigner, NewAccount, withSigner, AddressFromHex } from '@radiustechsystems/sdk';
+import { Address, BigNumberish, BytesLike, Hash, SignedTransaction, Signer, Transaction } from '@radiustechsystems/sdk';
 
-// Use an external signer (e.g., Clef)
-const address = AddressFromHex('0x...');
-const clefSigner = NewClefSigner(address, client, 'http://localhost:8550');
-const account = await NewAccount(withSigner(clefSigner));
-
-// Or create a custom signer
-const customSigner = new MyCustomSigner();
-const customSignerAccount = NewAccount(withSigner(customSigner));
+class MyCustomSigner implements Signer {
+    address(): Address { /* ... */ }
+    chainID(): BigNumberish { /* ... */ }
+    hash(transaction: Transaction): Hash { /* ... */ }
+    signMessage(message: BytesLike): Promise<Uint8Array> { /* ... */ }
+    signTransaction(transaction: Transaction): Promise<SignedTransaction> { /* ... */ }
+    constructor(...args) { /* ... */ }
+}
+const signer = new MyCustomSigner(...args);
+const account = NewAccount(withSigner(signer));
 ```
 
 ### Logging and Request Interceptors
@@ -115,7 +116,7 @@ const client = await NewClient('https://your-radius-endpoint',
         console.log(message, data);
     }),
     withInterceptor(async (reqBody, response) => {
-        // Process or log responses
+        // Examine request body, modify response, etc.
         return response;
     })
 );
@@ -127,7 +128,9 @@ const client = await NewClient('https://your-radius-endpoint',
 import { NewClient, withHttpClient } from '@radiustechsystems/sdk';
 
 const client = await NewClient('https://your-radius-endpoint',
-    withHttpClient(customHttpClient)
+    withHttpClient(async (url: string | URL | Request, init?: RequestInit | undefined): Promise<Response> => {
+        // Make a custom HTTP request, or use a library like axios
+    })
 );
 ```
 
