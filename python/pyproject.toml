@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools >=68.0", "setuptools_scm[toml] >=8.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "radiustechsystems-sdk"
+dynamic = ["version"]
+description = "Python SDK for interacting with the Radius Platform for smart contracts, automation, and payments"
+authors = [{name="Radius SDK Development Team", email="opensource@radiustech.xyz"}]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+keywords = [
+    "radius",
+    "evm",
+    "automation",
+    "contract",
+    "payment",
+    "transaction",
+    "ethereum",
+    "crypto",
+    "sdk",
+    "ai"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Typing :: Typed",
+]
+dependencies = ["web3 ~=7.8.0"]
+
+[project.urls]
+Homepage = "https://www.radiustech.xyz/"
+Documentation = "https://docs.radiustech.xyz/"
+Repository = "https://github.com/radiustechsystems/sdk"
+Issues = "https://github.com/radiustechsystems/sdk/issues"
+Changelog = "https://github.com/radiustechsystems/sdk/blob/main/python/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = ["ruff ~=0.8.0", "python-dev-cli ~=1.1.0"]
+publish = ["build ~=1.0.3", "twine ~=4.0.2"]
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["_version.py"]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "B", "C", "D", "UP", "PL"]
+ignore = ["D100", "D104"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.python-dev-cli.scripts]
+build = "python3 -m build --sdist --wheel"
+clean = "rm -rf build dist"
+clean_build = ["clean", "build"]
+format = "ruff format ."
+install = "python3 -m pip install -e \".[dev]\""
+install_test = "python3 -m pip install --upgrade --index-url https://test.pypi.org/simple/ --no-deps --no-cache-dir radiustechsystems-sdk"
+lint = "ruff check ."
+lint_fix = "ruff check --fix ."
+lint_format_fix = ["lint_fix", "format"]
+test = "python3 -m unittest discover test *_test.py --locals -bcf"
+upload = "python3 -m twine upload --skip-existing dist/*"
+upload_test = "python3 -m twine upload --skip-existing --repository testpypi dist/*"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools_scm]
+write_to = "src/_version.py"
