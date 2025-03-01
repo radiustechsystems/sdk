@@ -43,14 +43,14 @@ account := radius.NewAccount(
 
 ```go
 // Send 100 tokens to another account
-recipient := radius.AddressFromHex("0x...")
+recipient, err := radius.AddressFromHex("0x...")
 amount := big.NewInt(100)
 receipt, err := account.Send(context.Background(), client, recipient, amount)
 if err != nil {
     log.Fatal(err)
 }
 
-log.Printf("Transaction hash: %v", receipt.TxHash.Hex())
+log.Printf("Transaction hash: %s", receipt.TxHash.Hex())
 ```
 
 ### Deploy a Smart Contract
@@ -73,7 +73,7 @@ contract, err := client.DeployContract(
 
 ```go
 // Reference an existing contract
-address := radius.AddressFromHex("0x...")
+address, err := radius.AddressFromHex("0x...")
 abi := radius.ABIFromJSON(`[{"inputs":[],"name":"get","outputs":[{"type":"uint256"}],"type":"function"},{"inputs":[{"type":"uint256"}],"name":"set","type":"function"}]`)
 contract := radius.NewContract(address, abi)
 
@@ -91,12 +91,15 @@ log.Printf("Stored value: %v", result[0])
 ### Custom Transaction Signing
 
 ```go
-// Use an external signer (e.g., Clef)
-address := radius.AddressFromHex("0x...")
-clefSigner, err := radius.NewClefSigner(address, client, "http://localhost:8550")
-account := radius.NewAccount(radius.WithSigner(clefSigner))
+type MyCustomSigner struct{
+    // ...
+}
+func (s *MyCustomSigner) Address() radius.Address { /* ... */ }
+func (s *MyCustomSigner) ChainID() *big.Int { /* ... */ }
+func (s *MyCustomSigner) Hash(tx *radius.Transaction) radius.Hash { /* ... */ }
+func (s *MyCustomSigner) SignMessage(message []byte) ([]byte, error) { /* ... */ }
+func (s *MyCustomSigner) SignTransaction(tx *radius.Transaction) (*radius.SignedTransaction, error) { /* ... */ }
 
-// Or create a custom signer
 customSigner := &MyCustomSigner{}
 customSignerAccount := radius.NewAccount(radius.WithSigner(customSigner))
 ```
@@ -109,7 +112,7 @@ client, err := radius.NewClient("https://your-radius-endpoint",
         log.Printf(format, args...)
     }),
     radius.WithInterceptor(func(reqBody string, resp *http.Response) (*http.Response, error) {
-        // Process or log responses
+        // Examine request body, modify response, etc.
         return resp, nil
     }),
 )
