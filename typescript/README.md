@@ -92,9 +92,9 @@ console.log('Stored value:', result[0]);
 ### Custom Transaction Signing
 
 ```typescript
-import { Address, BigNumberish, BytesLike, Hash, SignedTransaction, Transaction } from '@radiustechsystems/sdk';
+import { Address, BigNumberish, BytesLike, Hash, SignedTransaction, Signer, Transaction } from '@radiustechsystems/sdk';
 
-class MyCustomSigner {
+class MyCustomSigner implements Signer {
     address(): Address { /* ... */ }
     chainID(): BigNumberish { /* ... */ }
     hash(transaction: Transaction): Hash { /* ... */ }
