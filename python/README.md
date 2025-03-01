@@ -1,18 +1,77 @@
-# Radius SDK for Python
+# Radius Python SDK
 
-**Coming Soon!**
+This is the official Python SDK for interacting with the Radius blockchain platform. The SDK provides a simple and
+intuitive interface for developers to build applications on top of Radius.
 
-The Radius SDK for Python is currently under development and will be available in a future release. This SDK will provide Python developers with a robust set of tools for interacting with the Radius platform.
+## Features
 
-## Features to Expect
+- Account management and transaction signing
+- Smart contract deployment and interaction
+- EVM-compatible blockchain integration
+- Support for both private key and external signers (Clef)
+- Strongly typed interface with Protocol definitions
 
-- Full API support for Radius services
-- Intuitive Python interfaces and helper methods
-- Comprehensive documentation and examples
-- Typed interfaces using Python type hints
+## Requirements
 
-Please check back later for updates on the release timeline and early access opportunities.
+- Python 3.9 or higher
 
-## Questions?
+## Installation
 
-If you have questions or feedback about the upcoming Python SDK, please open an issue in this repository.
+```bash
+pip install radiustechsystems-sdk
+```
+
+## Quickstart Examples
+
+### Connect to Radius and Create an Account
+
+```python
+```
+
+### Transfer Value Between Accounts
+
+```python
+```
+
+### Deploy a Smart Contract
+
+```python
+```
+
+### Interact with a Smart Contract
+
+```python
+```
+
+## Advanced Features
+
+### Custom Transaction Signing
+
+```python
+```
+
+### Logging and Request Interceptors
+
+```python
+```
+
+### Custom HTTP Client
+
+```python
+```
+
+## Resources
+
+- [Website](https://radiustech.xyz/)
+- [Testnet Access](https://docs.radiustech.xyz/radius-testnet-access)
+- [GitHub Issues](https://github.com/radiustechsystems/sdks/issues)
+- [Changelog](CHANGELOG.md)
+
+## Contributing
+
+Please see the [Python SDK Contributing Guide](CONTRIBUTING.md) for detailed information about contributing to this SDK.
+For repository-wide guidelines, see the [General Contributing Guide](../CONTRIBUTING.md).
+
+## License
+
+This project is licensed under the [MIT License](../LICENSE).

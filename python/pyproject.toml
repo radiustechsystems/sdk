@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools >=68.0", "setuptools_scm[toml] >=8.0", "wheel"]
+requires = ["setuptools >=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "radiustechsystems-sdk"
-dynamic = ["version"]
+version = "0.1.0"
 description = "Python SDK for interacting with the Radius Platform for smart contracts, automation, and payments"
 authors = [{name="Radius SDK Development Team", email="opensource@radiustech.xyz"}]
 readme = "README.md"
@@ -40,7 +40,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Application Frameworks",
     "Typing :: Typed",
 ]
-dependencies = ["web3 ~=7.8.0"]
+dependencies = [
+    "web3 ~=7.8.0",
+    "requests ~=2.31.0"
+]
 
 [project.urls]
 Homepage = "https://www.radiustech.xyz/"
@@ -83,7 +86,6 @@ upload = "python3 -m twine upload --skip-existing dist/*"
 upload_test = "python3 -m twine upload --skip-existing --repository testpypi dist/*"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+packages = ["radius", "src"]
 
-[tool.setuptools_scm]
-write_to = "src/_version.py"
+# Removed setuptools_scm configuration as we're using static versioning
