@@ -39,6 +39,8 @@ jobs:
       - name: Install dependencies
         working-directory: typescript
         run: pnpm install
+        env:
+          CI: true
       
       - name: Run linters
         working-directory: typescript
@@ -58,14 +60,9 @@ jobs:
       - name: Build package
         working-directory: typescript
         run: pnpm build:prod
-
+      
       - name: Publish to NPM
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
         working-directory: typescript
-      - run: npm publish --provenance --access public
+        run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
