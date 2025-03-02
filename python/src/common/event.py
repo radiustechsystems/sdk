@@ -1,6 +1,6 @@
 """Event module for the Radius SDK.
 
-This module provides the Event class and related utilities for blockchain events.
+This module provides the Event class and related utilities for smart contract events.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from src.common.hash import Hash
 
 @dataclass
 class Event:
-    """Represents an event emitted during a transaction on the Radius blockchain.
+    """Represents an event emitted during a transaction on the Radius platform.
     
     Events are emitted by smart contracts and contain information about state changes.
     """

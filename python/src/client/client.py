@@ -1,6 +1,6 @@
 """Client implementation for the Radius SDK.
 
-This module provides the main client for interacting with the Radius blockchain.
+This module provides the main client for interacting with the Radius platform.
 """
 
 from __future__ import annotations
@@ -18,9 +18,9 @@ from src.providers.eth.utils import from_eth_receipt
 
 
 class Client(SignerClient):
-    """Main client for interacting with the Radius blockchain.
+    """Main client for interacting with the Radius platform.
     
-    The client provides methods for querying the blockchain and sending transactions.
+    The client provides methods for querying the Radius platform and sending transactions.
     """
 
     @classmethod
@@ -28,14 +28,14 @@ class Client(SignerClient):
         """Create a new client.
         
         Args:
-            url: The URL of the blockchain node
+            url: The URL of the Radius JSON-RPC endpoint
             opts: Options for configuring the client
             
         Returns:
             A new client instance
             
         Raises:
-            ValueError: If the URL is invalid or the client cannot connect to the node
+            ValueError: If the URL is invalid or the client cannot connect to Radius
 
         """
         client = cls(url)
@@ -56,14 +56,14 @@ class Client(SignerClient):
         """Initialize a new client.
         
         Args:
-            url: The URL of the blockchain node
+            url: The URL of the Radius JSON-RPC endpoint
 
         """
         self._url = url
         self._http_client = DefaultHttpClient()
 
     async def chain_id(self) -> int:
-        """Get the chain ID of the blockchain.
+        """Get the chain ID of Radius.
         
         Returns:
             The chain ID
@@ -149,7 +149,7 @@ class Client(SignerClient):
             raise RuntimeError(f"Failed to get transaction count for {address.hex()}: {e}") from e
 
     async def send_raw_transaction(self, raw_tx: bytes) -> Hash:
-        """Send a raw transaction to the blockchain.
+        """Send a raw transaction to Radius.
         
         Args:
             raw_tx: The raw transaction bytes
@@ -268,7 +268,7 @@ class Client(SignerClient):
             raise RuntimeError(f"Gas estimation failed: {e}") from e
 
     async def _call(self, method: str, params: List[Any]) -> Any:
-        """Make a JSON-RPC call to the blockchain node.
+        """Make a JSON-RPC call to the Radius endpoint.
         
         Args:
             method: The JSON-RPC method to call

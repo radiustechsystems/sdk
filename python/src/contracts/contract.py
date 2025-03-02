@@ -16,7 +16,7 @@ from src.contracts.types import ContractClient
 
 
 class Contract:
-    """Represents a smart contract on the Radius blockchain.
+    """Represents a smart contract on the Radius platform.
     
     The Contract class is used to call methods and send transactions to smart contracts.
     """

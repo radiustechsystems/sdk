@@ -15,7 +15,7 @@ from src.common.hash import Hash
 
 @dataclass
 class Receipt:
-    """Represents a transaction receipt on the Radius blockchain.
+    """Represents a transaction receipt on the Radius platform.
     
     Transaction receipts contain information about the execution of a transaction.
     """

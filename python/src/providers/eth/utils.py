@@ -59,10 +59,10 @@ def from_hex(hex_str: str) -> bytes:
 
 
 def to_eth_transaction(tx: Transaction) -> Dict[str, Any]:
-    """Convert a Radius Transaction to an Ethereum JSON-RPC transaction format.
+    """Convert a Transaction object to an Ethereum JSON-RPC transaction format.
     
     Args:
-        tx: The Radius transaction to convert
+        tx: The transaction to convert
         
     Returns:
         The Ethereum JSON-RPC transaction
@@ -93,7 +93,7 @@ def to_eth_transaction(tx: Transaction) -> Dict[str, Any]:
 
 
 def from_eth_receipt(eth_receipt: Dict[str, Any]) -> Receipt:
-    """Convert an Ethereum JSON-RPC receipt to a Radius Receipt.
+    """Convert an Ethereum receipt to a Radius Receipt.
     
     Args:
         eth_receipt: The Ethereum receipt to convert

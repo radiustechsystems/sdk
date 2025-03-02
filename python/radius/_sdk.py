@@ -98,14 +98,14 @@ async def new_client(url: str, *opts: ClientOption) -> Client:
     The client is the main entry point for interacting with the Radius platform.
     
     Args:
-        url: The URL of the Ethereum node
+        url: The URL of the Radius JSON-RPC endpoint
         opts: Additional options for the client configuration
         
     Returns:
         A new Client instance
         
     Raises:
-        ValueError: If the client cannot be created or cannot connect to the network
+        ValueError: If the client cannot be created or cannot connect to Radius
 
     """
     return await Client.new(url, *opts)

@@ -10,7 +10,7 @@ from typing import ClassVar
 
 
 class Hash:
-    """Represents a hash in the Radius blockchain.
+    """Represents a hash in the Radius platform.
     
     A hash is a unique identifier generated from data using a cryptographic hashing function.
     """

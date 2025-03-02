@@ -1,6 +1,6 @@
 """HTTP client for the Radius SDK.
 
-This module provides the HTTP client implementation for making requests to the blockchain.
+This module provides the HTTP client implementation for making requests to Radius.
 """
 
 from __future__ import annotations

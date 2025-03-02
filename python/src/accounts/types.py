@@ -49,7 +49,7 @@ class AccountClient(Protocol):
         ...
 
     async def send_raw_transaction(self, raw_tx: bytes) -> Hash:
-        """Send a raw transaction to the blockchain.
+        """Send a raw transaction to Radius.
         
         Args:
             raw_tx: The raw transaction bytes

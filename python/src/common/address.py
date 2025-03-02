@@ -1,6 +1,6 @@
 """Address module for the Radius SDK.
 
-This module provides the Address class and related utilities for handling blockchain addresses.
+This module provides the Address class and related utilities for handling addresses.
 """
 
 from __future__ import annotations
@@ -10,9 +10,9 @@ from typing import ClassVar
 
 
 class Address:
-    """Represents a Radius blockchain address.
+    """Represents a Radius address.
     
-    An address is a unique identifier for an account or contract on the Radius blockchain.
+    An address is a unique identifier for an account or contract on the Radius platform.
     """
 
     # Class constants

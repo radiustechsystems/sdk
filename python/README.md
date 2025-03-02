@@ -1,15 +1,14 @@
 # Radius Python SDK
 
-This is the official Python SDK for interacting with the Radius blockchain platform. The SDK provides a simple and
-intuitive interface for developers to build applications on top of Radius.
+The official Python client library for interacting with the [Radius platform](https://radiustech.xyz/), providing a
+simple and idiomatic way to interact with Radius services.
 
 ## Features
 
 - Account management and transaction signing
 - Smart contract deployment and interaction
-- EVM-compatible blockchain integration
-- Support for both private key and external signers (Clef)
-- Strongly typed interface with Protocol definitions
+- Optional request logging and interceptors
+- EVM compatibility with high performance & low latency
 
 ## Requirements
 
@@ -74,4 +73,4 @@ For repository-wide guidelines, see the [General Contributing Guide](../CONTRIBU
 
 ## License
 
-This project is licensed under the [MIT License](../LICENSE).
+All Radius SDKs are released under the [MIT License](../LICENSE).

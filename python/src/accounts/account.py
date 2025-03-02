@@ -1,6 +1,6 @@
 """Account implementation for the Radius SDK.
 
-This module provides the Account class for interacting with blockchain accounts.
+This module provides the Account class for interacting with accounts on the Radius platform.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from src.common.transaction import SignedTransaction, Transaction
 
 
 class Account:
-    """Represents an account on the Radius blockchain.
+    """Represents an account on the Radius platform.
     
     An account is used to manage an address, check balances, and send transactions.
     """

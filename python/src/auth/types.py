@@ -18,7 +18,7 @@ class SignerClient(Protocol):
     """
 
     async def chain_id(self) -> int:
-        """Get the chain ID of the connected blockchain.
+        """Get the chain ID of Radius.
         
         Returns:
             The chain ID as an integer

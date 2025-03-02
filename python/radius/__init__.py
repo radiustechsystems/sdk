@@ -1,6 +1,6 @@
 """Radius Python SDK.
 
-This package provides a Python interface for interacting with the Radius blockchain platform.
+This package provides a Python interface for interacting with the Radius platform.
 """
 
 # Constants

@@ -87,5 +87,3 @@ upload_test = "python3 -m twine upload --skip-existing --repository testpypi dis
 
 [tool.setuptools]
 packages = ["radius", "src"]
-
-# Removed setuptools_scm configuration as we're using static versioning

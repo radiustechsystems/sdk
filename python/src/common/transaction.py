@@ -14,7 +14,7 @@ from src.common.hash import Hash
 
 @dataclass
 class Transaction:
-    """Represents a transaction on the Radius blockchain.
+    """Represents a transaction on the Radius platform.
     
     Transactions are used to transfer value, deploy contracts, or execute contract methods.
     """
@@ -107,7 +107,7 @@ class Transaction:
 
 @dataclass
 class SignedTransaction:
-    """Represents a signed transaction on the Radius blockchain.
+    """Represents a signed transaction on the Radius platform.
     
     A signed transaction includes the original transaction data plus signature information.
     """
