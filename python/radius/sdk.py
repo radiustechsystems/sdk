@@ -9,7 +9,6 @@ from __future__ import annotations
 # Import from src package through sys.path
 from src.accounts.account import Account
 from src.accounts.options import AccountOption, with_private_key, with_signer
-from src.auth.clef.signer import ClefSigner
 from src.auth.privatekey.signer import PrivateKeySigner
 from src.auth.types import Signer, SignerClient
 from src.client.client import Client
@@ -48,10 +47,13 @@ __all__ = [
     "address_from_hex",
     "bytecode_from_hex",
     "hash_from_hex",
+    "new_abi",
     "new_account",
+    "new_address",
     "new_clef_signer",
     "new_client",
     "new_contract",
+    "new_private_key_signer",
     "with_http_client",
     "with_interceptor",
     "with_logger",
@@ -71,75 +73,27 @@ __all__ = [
     "SignedTransaction",
 ]
 
-
-def new_clef_signer(address: Address, client: SignerClient, clef_url: str) -> ClefSigner:
-    """Create a new ClefSigner with the given address, client, and Clef URL.
+# Helper functions to create objects
+def new_abi(json_abi: str) -> ABI:
+    """Create a new ABI from JSON string."""
+    return abi_from_json(json_abi)
     
-    ClefSigner provides a way to sign transactions using Clef as an external signing service.
-    
-    Args:
-        address: The address to use for signing
-        client: The Radius client to use for transaction-related operations
-        clef_url: The URL of the Clef server
-        
-    Returns:
-        A new ClefSigner instance
-        
-    Raises:
-        ValueError: If unable to connect to the Clef server
+def new_address(hex_address: str) -> Address:
+    """Create a new Address from hex string."""
+    return address_from_hex(hex_address)
 
-    """
-    return ClefSigner(address, client, clef_url)
-
+def new_private_key_signer(private_key: str | bytes, chain_id: BigNumberish) -> PrivateKeySigner:
+    """Create a new PrivateKeySigner with the given private key and chain ID."""
+    return PrivateKeySigner(private_key, chain_id)
 
 async def new_client(url: str, *opts: ClientOption) -> Client:
-    """Create a new Client with the given URL and options.
-    
-    The client is the main entry point for interacting with the Radius platform.
-    
-    Args:
-        url: The URL of the Radius JSON-RPC endpoint
-        opts: Additional options for the client configuration
-        
-    Returns:
-        A new Client instance
-        
-    Raises:
-        ValueError: If the client cannot be created or cannot connect to Radius
-
-    """
+    """Create a new Client with the given URL and options."""
     return await Client.new(url, *opts)
 
-
 def new_contract(address: Address, abi: ABI) -> Contract:
-    """Create a new Contract with the given address and ABI.
-    
-    The Contract object allows interaction with smart contracts deployed on Radius.
-    
-    Args:
-        address: The contract address on Radius
-        abi: The contract ABI defining its methods and events
-        
-    Returns:
-        A new Contract instance
-
-    """
-    return Contract(address, abi)
-
+    """Create a new Contract with the given address and ABI."""
+    return Contract.new(address, abi)
 
 async def new_account(*opts: AccountOption) -> Account:
-    """Create a new Account with the given options.
-    
-    Accounts are used to represent Radius accounts and manage their keys.
-    
-    Args:
-        opts: Account options for configuring the account (private key, signer, etc.)
-        
-    Returns:
-        A new Account instance
-        
-    Raises:
-        ValueError: If the account cannot be created with the provided options
-
-    """
+    """Create a new Account with the given options."""
     return await Account.new(*opts)

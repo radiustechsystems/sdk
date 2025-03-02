@@ -36,6 +36,16 @@ class Transaction:
 
     gas_limit: Optional[int] = None
     """The gas limit for the transaction."""
+    
+    @property
+    def gas(self) -> Optional[int]:
+        """Alias for gas_limit to maintain compatibility."""
+        return self.gas_limit
+        
+    @gas.setter
+    def gas(self, value: int) -> None:
+        """Setter for gas alias."""
+        self.gas_limit = value
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the transaction to a dictionary.

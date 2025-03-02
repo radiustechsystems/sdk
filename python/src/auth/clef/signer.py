@@ -6,37 +6,30 @@ This module provides a signer implementation that uses Clef for signing.
 from __future__ import annotations
 
 import json
-from typing import Dict
+from typing import Dict, Union
 
 import requests
 
-from src.auth.types import SignerClient
 from src.common.address import Address
-from src.common.hash import hash_from_hex
+from src.common.hash import Hash, hash_from_hex
 from src.common.transaction import SignedTransaction, Transaction
+from src.providers.eth.types import BigNumberish, BytesLike
 from src.providers.eth.utils import to_eth_transaction
 
 
 class ClefSigner:
-    """A signer that uses the Clef external signing service.
-    
-    This signer is used to sign transactions and messages using Clef.
-    """
+    """A signer that uses the Clef external signing service."""
 
-    def __init__(self, address: Address, client: SignerClient, clef_url: str) -> None:
+    def __init__(self, address: Address, chain_id: BigNumberish, clef_url: str) -> None:
         """Initialize a new Clef signer.
         
         Args:
             address: The address associated with this signer
-            client: The client used to get chain information for signing
+            chain_id: The chain ID for signing
             clef_url: The URL of the Clef service
-            
-        Raises:
-            RuntimeError: If unable to connect to the Clef service
-
         """
         self._address = address
-        self._client = client
+        self._chain_id = chain_id
         self._clef_url = clef_url
 
         # Validate that we can connect to Clef
@@ -45,46 +38,36 @@ class ClefSigner:
         except Exception as e:
             raise RuntimeError(f"Unable to connect to Clef at {clef_url}: {e}") from e
 
-    @property
     def address(self) -> Address:
-        """Get the address associated with this signer.
-        
-        Returns:
-            The address
-
-        """
+        """Get the address associated with this signer."""
         return self._address
 
-    async def sign_transaction(self, tx: Transaction) -> SignedTransaction:
-        """Sign a transaction using Clef.
+    def chain_id(self) -> BigNumberish:
+        """Get the chain ID associated with this signer."""
+        return self._chain_id
         
-        Args:
-            tx: The transaction to sign
-            
-        Returns:
-            The signed transaction
-            
-        Raises:
-            RuntimeError: If the transaction is incomplete or cannot be signed
-
-        """
-        # Ensure the transaction has all required fields
-        if tx.nonce is None:
-            tx.nonce = await self._client.get_transaction_count(self.address)
-
-        if tx.gas_price is None:
-            raise RuntimeError("Transaction must have a gas price")
-
-        if tx.gas_limit is None:
-            raise RuntimeError("Transaction must have a gas limit")
-
-        # Get the chain ID
-        chain_id = await self._client.chain_id()
-
+    def hash(self, transaction: Transaction) -> Hash:
+        """Hash a transaction for signing."""
         # Convert to Ethereum transaction format
-        eth_tx = to_eth_transaction(tx)
-        eth_tx["chainId"] = chain_id
-        eth_tx["from"] = self.address.hex()
+        eth_tx = to_eth_transaction(transaction)
+        eth_tx["chainId"] = int(self._chain_id)
+        
+        # Use Keccak hash function
+        import hashlib
+        from eth_utils import keccak
+        
+        # Convert transaction to bytes and hash
+        tx_bytes = json.dumps(eth_tx).encode('utf-8')
+        tx_hash = keccak(tx_bytes)
+        
+        return Hash(tx_hash)
+
+    async def sign_transaction(self, transaction: Transaction) -> SignedTransaction:
+        """Sign a transaction using Clef."""
+        # Convert to Ethereum transaction format
+        eth_tx = to_eth_transaction(transaction)
+        eth_tx["chainId"] = int(self._chain_id)
+        eth_tx["from"] = self._address.hex()
 
         # Sign the transaction with Clef
         response = self._post("account_signTransaction", [eth_tx])
@@ -103,27 +86,25 @@ class ClefSigner:
         return SignedTransaction(
             tx_hash=tx_hash,
             raw_tx=raw_tx,
-            tx=tx,
+            tx=transaction,
         )
 
-    async def sign_message(self, message: bytes) -> Dict[str, bytes]:
-        """Sign a message using Clef.
-        
-        Args:
-            message: The message to sign
+    async def sign_message(self, message: BytesLike) -> bytes:
+        """Sign a message using Clef."""
+        # Ensure message is bytes
+        if isinstance(message, str):
+            if message.startswith('0x'):
+                message_bytes = bytes.fromhex(message[2:])
+            else:
+                message_bytes = message.encode('utf-8')
+        else:
+            message_bytes = bytes(message)
             
-        Returns:
-            A dictionary containing signature components
-            
-        Raises:
-            RuntimeError: If unable to sign the message
-
-        """
         # Convert message to hex
-        data = "0x" + message.hex()
+        data = "0x" + message_bytes.hex()
 
         # Sign the message with Clef
-        response = self._post("account_signData", ["data/plain", self.address.hex(), data])
+        response = self._post("account_signData", ["data/plain", self._address.hex(), data])
 
         if "error" in response:
             raise RuntimeError(f"Clef signing failed: {response['error']}")
@@ -132,36 +113,16 @@ class ClefSigner:
         if not result or not isinstance(result, str):
             raise RuntimeError("Clef returned invalid result")
 
-        # Extract signature components
+        # Extract signature
         signature = bytes.fromhex(result[2:]) if result.startswith("0x") else bytes.fromhex(result)
 
         if len(signature) != 65:
             raise RuntimeError("Invalid signature length")
 
-        r = signature[:32]
-        s = signature[32:64]
-        v = signature[64:65]
-
-        return {
-            "r": r,
-            "s": s,
-            "v": v,
-        }
+        return signature
 
     def _post(self, method: str, params: list) -> Dict:
-        """Send a JSON-RPC request to Clef.
-        
-        Args:
-            method: The JSON-RPC method to call
-            params: The parameters to pass to the method
-            
-        Returns:
-            The JSON-RPC response
-            
-        Raises:
-            RuntimeError: If the request fails
-
-        """
+        """Send a JSON-RPC request to Clef."""
         payload = {
             "id": 1,
             "jsonrpc": "2.0",

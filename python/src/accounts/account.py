@@ -11,16 +11,13 @@ from src.accounts.options import AccountOption
 from src.accounts.types import AccountClient
 from src.auth.types import Signer
 from src.common.address import Address
-from src.common.constants import MAX_GAS
-from src.common.hash import Hash
+from src.common.receipt import Receipt
 from src.common.transaction import SignedTransaction, Transaction
+from src.providers.eth.types import BigNumberish, BytesLike
 
 
 class Account:
-    """Represents an account on the Radius platform.
-    
-    An account is used to manage an address, check balances, and send transactions.
-    """
+    """Represents an account on the Radius platform."""
 
     @classmethod
     async def new(cls, *opts: AccountOption) -> Account:
@@ -31,10 +28,6 @@ class Account:
             
         Returns:
             A new account instance
-            
-        Raises:
-            ValueError: If required options are missing
-
         """
         account = cls()
 
@@ -52,36 +45,19 @@ class Account:
         self._signer: Optional[Signer] = None
 
     @property
-    def address(self) -> Address:
-        """Get the address of the account.
-        
-        Returns:
-            The account address
-            
-        Raises:
-            RuntimeError: If the account is not properly initialized
-
-        """
-        if not self._signer:
-            raise RuntimeError("Account has no signer")
-        return self._signer.address
-
-    @property
     def signer(self) -> Signer:
-        """Get the signer for the account.
-        
-        Returns:
-            The account signer
-            
-        Raises:
-            RuntimeError: If the account is not properly initialized
-
-        """
+        """Get the signer for the account."""
         if not self._signer:
             raise RuntimeError("Account has no signer")
         return self._signer
 
-    async def get_balance(self, client: AccountClient) -> int:
+    def address(self) -> Address:
+        """Get the address of the account."""
+        if not self._signer:
+            raise RuntimeError("Account has no signer")
+        return self._signer.address()
+
+    async def balance(self, client: AccountClient) -> int:
         """Get the balance of the account.
         
         Args:
@@ -89,74 +65,75 @@ class Account:
             
         Returns:
             The account balance in wei
-            
-        Raises:
-            RuntimeError: If unable to retrieve the balance
-
         """
-        return await client.get_balance(self.address)
+        return await client.balance_at(self.address())
 
-    async def sign_transaction(self, tx: Transaction) -> SignedTransaction:
-        """Sign a transaction.
-        
-        Args:
-            tx: The transaction to sign
-            
-        Returns:
-            The signed transaction
-            
-        Raises:
-            RuntimeError: If unable to sign the transaction
+    async def nonce(self, client: AccountClient) -> int:
+        """Get the next nonce for this account.
 
-        """
-        return await self.signer.sign_transaction(tx)
-
-    async def sign_message(self, message: bytes) -> dict:
-        """Sign a message.
-        
-        Args:
-            message: The message to sign
-            
-        Returns:
-            The signature components
-            
-        Raises:
-            RuntimeError: If unable to sign the message
-
-        """
-        return await self.signer.sign_message(message)
-
-    async def send_transaction(
-        self,
-        client: AccountClient,
-        tx: Transaction,
-        wait_for_receipt: bool = False,
-    ) -> Hash:
-        """Send a transaction from this account.
-        
         Args:
             client: The client to use for the operation
-            tx: The transaction to send
-            wait_for_receipt: Whether to wait for the transaction receipt
-            
+
         Returns:
-            The transaction hash
-            
-        Raises:
-            RuntimeError: If unable to send the transaction
-
+            The next nonce to use
         """
-        # Complete the transaction if needed
-        if tx.nonce is None:
-            tx.nonce = await client.get_transaction_count(self.address)
+        return await client.pending_nonce_at(self.address())
 
-        if tx.gas_limit is None:
-            # Estimate gas and add a 10% buffer
-            estimate = await client.estimate_gas(tx)
-            tx.gas_limit = min(MAX_GAS, int(estimate * 1.1))
+    async def send(
+        self,
+        client: AccountClient,
+        recipient: Address,
+        value: BigNumberish
+    ) -> Receipt:
+        """Send native tokens to an address.
 
-        # Sign the transaction
-        signed_tx = await self.sign_transaction(tx)
+        Args:
+            client: The client to use for the operation
+            recipient: The recipient address
+            value: The amount to send in wei
 
-        # Send the transaction
-        return await client.send_raw_transaction(signed_tx.raw_tx)
+        Returns:
+            The transaction receipt
+        """
+        return await client.send(self.signer, recipient, value)
+
+    async def sign_message(self, message: BytesLike) -> bytes:
+        """Sign a message.
+
+        Args:
+            message: The message to sign
+
+        Returns:
+            The signature as bytes
+        """
+        signature = await self.signer.sign_message(message)
+
+        # Convert signature dict to bytes if needed
+        if isinstance(signature, dict):
+            # Convert from r, s, v format to bytes
+            r = signature.get('r', b'')
+            s = signature.get('s', b'')
+            v = signature.get('v', b'')
+
+            if isinstance(r, int):
+                r = r.to_bytes(32, 'big')
+            if isinstance(s, int):
+                s = s.to_bytes(32, 'big')
+            if isinstance(v, int):
+                v = v.to_bytes(1, 'big')
+
+            return r + s + v
+
+        # If it's already bytes, return as is
+        return signature if isinstance(signature, bytes) else bytes(signature)
+
+    async def sign_transaction(self, transaction: Transaction) -> SignedTransaction:
+        """Sign a transaction.
+
+        Args:
+            transaction: The transaction to sign
+
+        Returns:
+            The signed transaction
+        """
+        return await self.signer.sign_transaction(transaction)

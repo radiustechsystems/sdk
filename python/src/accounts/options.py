@@ -7,9 +7,8 @@ from __future__ import annotations
 
 from typing import Callable, TypeVar, Union
 
-from src.accounts.types import AccountClient
-from src.auth.privatekey.signer import PrivateKeySigner
 from src.auth.types import Signer
+from src.providers.eth.types import BigNumberish
 
 T = TypeVar("T")
 
@@ -17,22 +16,20 @@ T = TypeVar("T")
 AccountOption = Callable[[T], T]
 
 
-def with_private_key(private_key: Union[str, bytes], client: AccountClient) -> AccountOption:
+def with_private_key(private_key: Union[str, bytes], chain_id: BigNumberish) -> AccountOption:
     """Create an account option that sets the private key signer.
     
     Args:
         private_key: The private key to use for signing
-        client: The client to use for transaction operations
+        chain_id: The chain ID to use for signing
         
     Returns:
         An account option function
-        
-    Raises:
-        ValueError: If the private key is invalid
-
     """
+    from src.auth.privatekey.signer import PrivateKeySigner
+    
     def apply_option(account: T) -> T:
-        signer = PrivateKeySigner(private_key, client)
+        signer = PrivateKeySigner(private_key, chain_id)
         account._signer = signer  # type: ignore
         return account
 
@@ -47,7 +44,6 @@ def with_signer(signer: Signer) -> AccountOption:
         
     Returns:
         An account option function
-
     """
     def apply_option(account: T) -> T:
         account._signer = signer  # type: ignore

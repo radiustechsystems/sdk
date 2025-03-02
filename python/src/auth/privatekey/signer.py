@@ -6,36 +6,30 @@ This module provides a signer implementation that uses a private key for signing
 from __future__ import annotations
 
 import binascii
-from typing import Dict, Union
+from typing import Union
 
 from eth_account import Account as EthAccount
 from eth_account.messages import encode_defunct
 
 from src.auth.types import SignerClient
 from src.common.address import Address
-from src.common.hash import hash_from_hex
+from src.common.hash import Hash, hash_from_hex
 from src.common.transaction import SignedTransaction, Transaction
+from src.providers.eth.types import BigNumberish, BytesLike
 from src.providers.eth.utils import to_eth_transaction
 
 
 class PrivateKeySigner:
-    """A signer that uses an ECDSA private key for signing.
-    
-    This signer is used to sign transactions and messages using a private key.
-    """
+    """A signer that uses an ECDSA private key for signing."""
 
-    def __init__(self, private_key: Union[str, bytes], client: SignerClient) -> None:
+    def __init__(self, private_key: Union[str, bytes], chain_id: BigNumberish) -> None:
         """Initialize a new private key signer.
         
         Args:
             private_key: The private key (hex string with or without 0x prefix, or bytes)
-            client: The client used to get chain information for signing
-            
-        Raises:
-            ValueError: If the private key is invalid
-
+            chain_id: The chain ID to use for signing
         """
-        self._client = client
+        self._chain_id = chain_id
 
         # Normalize the private key
         if isinstance(private_key, str):
@@ -55,81 +49,67 @@ class PrivateKeySigner:
         address_bytes = bytes.fromhex(self._account.address[2:])
         self._address = Address(address_bytes)
 
-    @property
     def address(self) -> Address:
-        """Get the address associated with this signer.
-        
-        Returns:
-            The address
-
-        """
+        """Get the address associated with this signer."""
         return self._address
 
-    async def sign_transaction(self, tx: Transaction) -> SignedTransaction:
-        """Sign a transaction.
+    def chain_id(self) -> BigNumberish:
+        """Get the chain ID associated with this signer."""
+        return self._chain_id
         
-        Args:
-            tx: The transaction to sign
-            
-        Returns:
-            The signed transaction
-            
-        Raises:
-            RuntimeError: If the transaction is incomplete or cannot be signed
-
-        """
-        # Ensure the transaction has all required fields
-        if tx.nonce is None:
-            tx.nonce = await self._client.get_transaction_count(self.address)
-
-        if tx.gas_price is None:
-            raise RuntimeError("Transaction must have a gas price")
-
-        if tx.gas_limit is None:
-            raise RuntimeError("Transaction must have a gas limit")
-
-        # Get the chain ID
-        chain_id = await self._client.chain_id()
-
+    def hash(self, transaction: Transaction) -> Hash:
+        """Hash a transaction for signing."""
         # Convert to Ethereum transaction format
-        eth_tx = to_eth_transaction(tx)
-        eth_tx["chainId"] = chain_id
+        eth_tx = to_eth_transaction(transaction)
+        eth_tx["chainId"] = int(self._chain_id)
+        
+        # Get the hash
+        tx_hash = self._account._keys.keccak(eth_tx.encode('utf-8'))
+        return Hash(tx_hash)
+
+    async def sign_transaction(self, transaction: Transaction) -> SignedTransaction:
+        """Sign a transaction."""
+        # Ensure gas_price is set - required by Ethereum transaction format
+        if transaction.gas_price is None:
+            transaction.gas_price = 0  # Default to 0 gas price for Radius networks
+            
+        # Convert to Ethereum transaction format
+        eth_tx = to_eth_transaction(transaction)
+        eth_tx["chainId"] = int(self._chain_id)
 
         # Sign the transaction
         signed = self._account.sign_transaction(eth_tx)
 
         # Create a SignedTransaction
         tx_hash = hash_from_hex(signed.hash.hex())
-        raw_tx = signed.raw_transaction  # accessing as attribute 
+        raw_tx = signed.raw_transaction
 
         return SignedTransaction(
             tx_hash=tx_hash,
             raw_tx=raw_tx,
-            tx=tx,
+            tx=transaction,
         )
 
-    async def sign_message(self, message: bytes) -> Dict[str, bytes]:
-        """Sign a message.
-        
-        Args:
-            message: The message to sign
+    async def sign_message(self, message: BytesLike) -> bytes:
+        """Sign a message."""
+        # Ensure message is bytes
+        if isinstance(message, str):
+            if message.startswith('0x'):
+                message_bytes = bytes.fromhex(message[2:])
+            else:
+                message_bytes = message.encode('utf-8')
+        else:
+            message_bytes = bytes(message)
             
-        Returns:
-            A dictionary containing signature components
-            
-        Raises:
-            RuntimeError: If unable to sign the message
-
-        """
         # Encode the message with Ethereum message prefix
-        encoded_message = encode_defunct(message)
+        encoded_message = encode_defunct(message_bytes)
 
         # Sign the message
         signed_message = self._account.sign_message(encoded_message)
 
-        # Extract signature components
-        return {
-            "r": signed_message.r.to_bytes(32, byteorder="big"),
-            "s": signed_message.s.to_bytes(32, byteorder="big"),
-            "v": signed_message.v.to_bytes(1, byteorder="big"),
-        }
+        # Combine r, s, v into a single signature
+        r = signed_message.r.to_bytes(32, byteorder="big")
+        s = signed_message.s.to_bytes(32, byteorder="big")
+        v = signed_message.v.to_bytes(1, byteorder="big")
+        
+        return r + s + v

@@ -5,57 +5,39 @@ This module provides the Contract class for interacting with smart contracts.
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
-from src.accounts.account import Account
+from src.auth.types import Signer
 from src.common.abi import ABI
 from src.common.address import Address
 from src.common.hash import Hash
+from src.common.receipt import Receipt
 from src.common.transaction import Transaction
 from src.contracts.types import ContractClient
+from src.common.event import Event
 
 
 class Contract:
-    """Represents a smart contract on the Radius platform.
-    
-    The Contract class is used to call methods and send transactions to smart contracts.
-    """
+    """Represents a smart contract on the Radius platform."""
 
     def __init__(self, address: Address, abi: ABI) -> None:
-        """Initialize a new contract.
-        
-        Args:
-            address: The address of the deployed contract
-            abi: The ABI of the contract
-
-        """
+        """Initialize a new contract."""
         self._address = address
         self._abi = abi
 
     @property
-    def address(self) -> Address:
-        """Get the address of the contract.
-        
-        Returns:
-            The contract address
-
-        """
-        return self._address
-
-    @property
     def abi(self) -> ABI:
-        """Get the ABI of the contract.
-        
-        Returns:
-            The contract ABI
-
-        """
+        """Get the ABI of the contract."""
         return self._abi
+
+    def address(self) -> Address:
+        """Get the address of the contract."""
+        return self._address
 
     async def call(
         self,
         client: ContractClient,
-        method_name: str,
+        method: str,
         *args: Any,
         block_identifier: str = "latest",
     ) -> List[Any]:
@@ -63,155 +45,126 @@ class Contract:
         
         Args:
             client: The client to use for the call
-            method_name: The name of the method to call
+            method: The name of the method to call
             args: The arguments to pass to the method
             block_identifier: The block to execute the call on
             
         Returns:
             The decoded result of the method call
-            
-        Raises:
-            ValueError: If the method is not found in the ABI
-            RuntimeError: If the call fails
-
         """
         # Encode the function call
-        data = self._abi.encode_function_data(method_name, *args)
+        data = self._abi.encode_function_data(method, *args)
 
         # Create a transaction for the call
         tx = Transaction(to=self._address, data=data)
 
         # Execute the call
-        result = await client.call(tx, block_identifier)
+        result = await self._eth_call(client, tx, block_identifier)
 
         # Decode the result
-        return self._abi.decode_function_result(method_name, result)
+        return self._abi.decode_function_result(method, result)
 
     async def execute(
         self,
         client: ContractClient,
-        account: Account,
-        method_name: str,
+        signer: Signer,
+        method: str,
         *args: Any,
-        value: int = 0,
-        gas_limit: Optional[int] = None,
-        gas_price: Optional[int] = None,
-    ) -> Hash:
+        value: int = 0
+    ) -> Receipt:
         """Execute a state-changing contract method.
         
         Args:
             client: The client to use for the transaction
-            account: The account to send the transaction from
-            method_name: The name of the method to call
+            signer: The signer to use for the transaction
+            method: The name of the method to call
             args: The arguments to pass to the method
             value: The amount of native currency to send with the transaction
-            gas_limit: The gas limit for the transaction
-            gas_price: The gas price for the transaction
             
         Returns:
-            The transaction hash
-            
-        Raises:
-            ValueError: If the method is not found in the ABI
-            RuntimeError: If the transaction fails
-
+            The transaction receipt
         """
         # Encode the function call
-        data = self._abi.encode_function_data(method_name, *args)
+        data = self._abi.encode_function_data(method, *args)
 
         # Create a transaction for the execution
         tx = Transaction(
             to=self._address,
             data=data,
-            value=value,
-            gas_limit=gas_limit,
-            gas_price=gas_price,
+            value=value
         )
-
-        # Send the transaction
-        return await account.send_transaction(client, tx)
+        
+        # Get nonce if not provided
+        if tx.nonce is None:
+            tx.nonce = await client.pending_nonce_at(signer.address())
+            
+        # Estimate gas if not provided
+        if tx.gas is None:
+            gas = await client.estimate_gas(tx)
+            tx.gas = int(gas * 1.2)  # Add 20% safety margin
+            
+        # Set gas price if not provided
+        if tx.gas_price is None:
+            try:
+                tx.gas_price = await client.gas_price()
+            except Exception:
+                # Fallback to 0 gas price for Radius networks
+                tx.gas_price = 0
+            
+        # Sign transaction
+        signed_tx = await signer.sign_transaction(tx)
+        
+        # Send transaction and wait for receipt
+        return await client.transact(signer, signed_tx)
 
     @classmethod
-    async def deploy(
-        cls,
-        client: ContractClient,
-        account: Account,
-        abi: ABI,
-        bytecode: bytes,
-        *constructor_args: Any,
-        value: int = 0,
-        gas_limit: Optional[int] = None,
-        gas_price: Optional[int] = None,
-    ) -> Tuple[Hash, Contract]:
-        """Deploy a new contract.
+    def new(cls, address: Address, abi: ABI) -> Contract:
+        """Create a new contract instance.
         
         Args:
-            client: The client to use for the transaction
-            account: The account to send the transaction from
+            address: The address of the deployed contract
             abi: The ABI of the contract
-            bytecode: The bytecode of the contract
-            constructor_args: The arguments to pass to the constructor
-            value: The amount of native currency to send with the transaction
-            gas_limit: The gas limit for the transaction
-            gas_price: The gas price for the transaction
             
         Returns:
-            A tuple of (transaction hash, Contract instance)
-            
-        Raises:
-            ValueError: If the constructor is not found in the ABI
-            RuntimeError: If the transaction fails
-
+            A new contract instance
         """
-        # Prepare the deployment data
-        deploy_data = bytecode
+        return cls(address, abi)
 
-        # If there are constructor arguments, encode them
-        if constructor_args:
-            # Find the constructor in the ABI
-            constructor = None
-            for item in abi._raw_abi:
-                if item.get("type") == "constructor":
-                    constructor = item
-                    break
+    async def _eth_call(
+        self, 
+        client: ContractClient, 
+        tx: Transaction, 
+        block_identifier: str
+    ) -> bytes:
+        """Execute a call to the Ethereum client.
+        
+        Args:
+            client: The client to use for the call
+            tx: The transaction to execute
+            block_identifier: The block to execute the call on
+            
+        Returns:
+            The raw result data
+        """
+        # Convert the transaction to a format the node understands
+        call_obj: Dict[str, Any] = {}
 
-            if not constructor:
-                if constructor_args:
-                    raise ValueError("ABI does not contain a constructor, but arguments were provided")
-            else:
-                try:
-                    # Use web3.py to encode constructor arguments
-                    from web3 import Web3
-                    
-                    # Initialize Web3 with a null provider - we only need encoding functionality
-                    w3 = Web3()
-                    
-                    # Create contract factory
-                    contract_factory = w3.eth.contract(abi=abi._raw_abi, bytecode="0x" + bytecode.hex())
-                    
-                    # Get the data with encoded constructor arguments
-                    constructor_instance = contract_factory.constructor(*constructor_args)
-                    deploy_data_hex = constructor_instance.data_in_transaction
-                    
-                    # The data includes the bytecode plus encoded arguments
-                    if deploy_data_hex.startswith('0x'):
-                        deploy_data_hex = deploy_data_hex[2:]  # Remove 0x prefix
-                    
-                    deploy_data = bytes.fromhex(deploy_data_hex)
-                except Exception as e:
-                    raise ValueError(f"Failed to encode constructor arguments: {e}") from e
+        if tx.to is not None:
+            call_obj["to"] = tx.to.hex()
 
-        # Create a transaction for the deployment
-        tx = Transaction(
-            data=deploy_data,
-            value=value,
-            gas_limit=gas_limit,
-            gas_price=gas_price,
-        )
+        if tx.data:
+            call_obj["data"] = "0x" + tx.data.hex()
 
-        # Send the transaction
-        tx_hash = await account.send_transaction(client, tx)
+        if tx.value > 0:
+            call_obj["value"] = hex(tx.value)
 
-        # Return the transaction hash and a placeholder contract
-        # The actual contract address will be available in the transaction receipt
-        return tx_hash, cls(Address(bytes(20)), abi)
+        # Make the call
+        response = await client._call("eth_call", [call_obj, block_identifier])
+
+        # Convert the response to bytes
+        if isinstance(response, str) and response.startswith("0x"):
+            return bytes.fromhex(response[2:])
+        elif isinstance(response, str):
+            return bytes.fromhex(response)
+        else:
+            return bytes()
