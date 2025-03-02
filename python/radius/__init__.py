@@ -5,7 +5,7 @@ This package provides a Python interface for interacting with the Radius platfor
 
 # Constants
 # Types
-from ._sdk import (
+from .sdk import (
     # Classes
     ABI,
     MAX_GAS,
