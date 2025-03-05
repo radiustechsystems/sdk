@@ -31,7 +31,7 @@ yarn add @radiustechsystems/sdk
 
 ## Quickstart Examples
 
-### Connect to Radius and Create an Account
+### Connect to Radius
 
 Be sure to use your own `RADIUS_ENDPOINT` and `PRIVATE_KEY` values, as mentioned in the [Requirements](#requirements).
 
