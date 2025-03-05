@@ -5,19 +5,18 @@ smart contract platform that enables near-instant settlement and can process mil
 
 ## Overview
 
-Radius provides scalable, low-latency smart contract execution with sub-second finality. These SDKs make it easy to
-build applications that leverage Radius' high throughput and near-instant settlement capabilities.
+Next-generation payments require processing power that is orders of magnitude more efficient than what is currently
+available. Built by the team that brought USDC to market, Radius is the result of many years rethinking smart contract
+scalability from first principles.
 
-## Key Features
+Unlike blockchains that sequentially process a limited batch of transactions at a time, our distributed execution layer
+handles multiple transactions simultaneously. Our platform has demonstrated that it can process over 2.8 million
+transactions per second with near zero latency and cost, far exceeding any other system that exists today.
 
-- 2.8M+ transactions per second
-- 100+ gigagas/sec throughput
-- ~500 ms latency
-- Transaction cost < $0.000001
-- Full EVM compatibility & multi-VM support
-- Horizontal scaling
-- Parallel execution & state updates
-- No global transaction ordering
+Radius is fully EVM-compatible and provides SDKs in [multiple programming languages](#available-sdks) with a clean,
+consistent interface, enabling developers to easily add instant payments to their apps with just a few lines of code.
+
+No block times. No bidding wars. Just instant settlement.
 
 ## Available SDKs
 
@@ -25,6 +24,40 @@ build applications that leverage Radius' high throughput and near-instant settle
 - [Python SDK](python/README.md) (coming soon)
 - [Rust SDK](rust/README.md) (coming soon)
 - [TypeScript SDK](typescript/README.md)
+
+## Use Cases
+
+Radius is capable of handling millions of micro-payments per second at a cost that makes doing so economically viable.
+This is particularly well-suited for AI agent use cases, and equally so for any application that requires massive scale,
+instant settlement, and cryptographic guarantees.
+
+### AI Payments
+- AI agents buying products and services in real-time
+- Pay-per-API-call data access at fractions of a cent
+- Pay-per-compute, storage, bandwidth request
+- High-frequency trading settlement
+
+### Traditional Payments
+- High-frequency trading and settlement
+- Pay-per-use services and subscriptions
+- Real-time revenue sharing and splits
+
+### Beyond Payments
+- Decentralized social networks and content systems
+- Gaming and virtual world state management
+- IoT sensor networks and data marketplaces
+- Identity and attestation systems
+
+## Available Today
+
+The Radius invite-only testnet launched in January 2025 with major stablecoin issuers and AI labs already onboard.
+Radius supports both simple payments and other EVM-compatible smart contracts, so developers can experience the
+efficiency of its parallel execution design.
+
+The next trillion transactions won't come from humans typing on keyboards. They'll come from AI agents making
+split-second decisions. We're building the infrastructure necessary to make that future possible.
+
+Ready to build the future? Start [here](https://docs.radiustech.xyz/radius-testnet-access).
 
 ## Contributing
 
@@ -37,9 +70,9 @@ We welcome contributions to all Radius SDKs! Please see:
 ## Support
 
 - [Website](https://radiustech.xyz/)
-- [Documentation](https://docs.radiustech.xyz/)
+- [Testnet Access](https://docs.radiustech.xyz/radius-testnet-access)
 - [GitHub Issues](https://github.com/radiustechsystems/sdk/issues)
 
 ## License
 
-This SDK is released under the [MIT License](LICENSE).
+All Radius SDKs are released under the [MIT License](LICENSE).

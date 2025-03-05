@@ -1,19 +1,20 @@
 # Radius TypeScript SDK
 
-A TypeScript client library for interacting with [Radius](https://radiustech.xyz/), providing a simple and type-safe
-way to interact with the Radius platform.
+The official TypeScript client library for interacting with the [Radius platform](https://radiustech.xyz/), providing
+a simple and idiomatic way to interact with Radius services.
 
 ## Features
 
 - Account management and transaction signing
 - Smart contract deployment and interaction
 - Optional request logging and interceptors
-- EVM compatibility with high performance
-- Type-safe contract interactions
+- EVM compatibility with high performance & low latency
 
 ## Requirements
 
-- Node.js >= 20.12.2
+- Node.js >= 20.12
+- Radius JSON-RPC endpoint: https://docs.radiustech.xyz/radius-testnet-access
+- Ethereum private key: https://ethereum.org/en/developers/docs/accounts/#account-creation
 
 ## Installation
 
@@ -32,37 +33,50 @@ yarn add @radiustechsystems/sdk
 
 ### Connect to Radius and Create an Account
 
+Be sure to use your own `RADIUS_ENDPOINT` and `PRIVATE_KEY` values, as mentioned in the [Requirements](#requirements).
+
 ```typescript
-import { NewClient, NewAccount, withPrivateKey } from '@radiustechsystems/sdk';
+import { Account, Client, NewClient, NewAccount, withPrivateKey } from '@radiustechsystems/sdk';
 
-// Connect to Radius
-const client = await NewClient('https://your-radius-endpoint');
+const RADIUS_ENDPOINT = "https://rpc.testnet.tryradi.us/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+const PRIVATE_KEY = "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036415f";
 
-// Create an account using a private key
-const account = await NewAccount(withPrivateKey('your-private-key', client));
+const client: Client = await NewClient(RADIUS_ENDPOINT);
+const account: Account = await NewAccount(withPrivateKey(PRIVATE_KEY, client));
+```
+
+Alternatively, using plain JavaScript and CommonJS `require` syntax:
+
+```javascript
+const { Account, Client, NewClient, NewAccount, withPrivateKey } = require('@radiustechsystems/sdk');
 ```
 
 ### Transfer Value Between Accounts
 
-```typescript
-import { AddressFromHex } from '@radiustechsystems/sdk';
+Here, we send 100 tokens to another account. Be sure to replace the recipient's address with one of your own.
 
-// Send 100 tokens to another account
-const recipient = AddressFromHex('0x...');
-const amount = BigInt(100);
-const receipt = await account.send(client, recipient, amount);
+```typescript
+import { Address, AddressFromHex, Receipt } from '@radiustechsystems/sdk';
+
+const recipient: Address = AddressFromHex('0x5e97870f263700f46aa00d967821199b9bc5a120'); // Recipient's address
+const amount: bigint = BigInt(100);
+const receipt: Receipt = await account.send(client, recipient, amount);
 
 console.log('Transaction hash:', receipt.txHash.hex());
 ```
 
 ### Deploy a Smart Contract
 
-```typescript
-import { ABIFromJSON, BytecodeFromHex } from '@radiustechsystems/sdk';
+Here, we deploy the [SimpleStorage.sol](https://github.com/radiustechsystems/sdk/tree/main/contracts/solidity)
+example contract included in this SDK, with the application binary interface (ABI) and bytecode that were generated
+using the Solidity compiler [solcjs](https://docs.soliditylang.org/en/latest/installing-solidity.html#npm-node-js).
 
-// Parse ABI and bytecode
-const abi = ABIFromJSON(`[{"inputs":[],"name":"get","outputs":[{"type":"uint256"}],"type":"function"},{"inputs":[{"type":"uint256"}],"name":"set","type":"function"}]`);
-const bytecode = BytecodeFromHex('608060405234801561001057600080fd5b50610150806100...');
+```typescript
+import { ABI, ABIFromJSON, BytecodeFromHex } from '@radiustechsystems/sdk';
+
+// Parse ABI and bytecode of the SimpleStorage contract
+const abi: ABI = ABIFromJSON(`[{"inputs":[],"name":"get","outputs":[{"type":"uint256"}],"type":"function"},{"inputs":[{"type":"uint256"}],"name":"set","type":"function"}]`);
+const bytecode: Uint8Array = BytecodeFromHex('6080604052348015600e575f5ffd5b5060a580601a5f395ff3fe6080604052348015600e575f5ffd5b50600436106030575f3560e01c806360fe47b11460345780636d4ce63c146045575b5f5ffd5b6043603f3660046059565b5f55565b005b5f5460405190815260200160405180910390f35b5f602082840312156068575f5ffd5b503591905056fea26469706673582212207655d86666fa8aa75666db8416e0f5db680914358a57e84aa369d9250218247f64736f6c634300081c0033');
 
 // Deploy the contract
 const contract = await client.deployContract(account.signer, bytecode, abi);
@@ -70,20 +84,23 @@ const contract = await client.deployContract(account.signer, bytecode, abi);
 
 ### Interact with a Smart Contract
 
-```typescript
-import { NewContract, AddressFromHex, ABIFromJSON } from '@radiustechsystems/sdk';
+Assuming the contract was previously deployed (which is typically the case), we can interact with it using the contract
+address and ABI. Be sure to replace the contract address with that of your own deployed contract.
 
-// Reference an existing contract
-const address = AddressFromHex('0x...');
-const abi = ABIFromJSON(`[{"inputs":[],"name":"get","outputs":[{"type":"uint256"}],"type":"function"},{"inputs":[{"type":"uint256"}],"name":"set","type":"function"}]`);
-const contract = NewContract(address, abi);
+```typescript
+import { ABI, Address, AddressFromHex, ABIFromJSON, Contract, NewContract, Receipt } from '@radiustechsystems/sdk';
+
+// Reference a previously deployed contract
+const address: Address = AddressFromHex('0x5e97870f263700f46aa00d967821199b9bc5a120'); // Contract address
+const abi: ABI = ABIFromJSON(`[{"inputs":[],"name":"get","outputs":[{"type":"uint256"}],"type":"function"},{"inputs":[{"type":"uint256"}],"name":"set","type":"function"}]`);
+const contract: Contract = NewContract(address, abi);
 
 // Write to the contract
-const value = BigInt(42);
-const receipt = await contract.execute(client, account.signer, 'set', value);
+const value: bigint = BigInt(42);
+const receipt: Receipt = await contract.execute(client, account.signer, 'set', value);
 
 // Read from the contract
-const result = await contract.call(client, 'get');
+const result: unknown[] = await contract.call(client, 'get');
 console.log('Stored value:', result[0]);
 ```
 
@@ -148,4 +165,4 @@ SDK. For repository-wide guidelines, see the [General Contributing Guide](../CON
 
 ## License
 
-This project is licensed under the [MIT License](../LICENSE).
+All Radius SDKs are released under the [MIT License](../LICENSE).
