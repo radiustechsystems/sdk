@@ -28,6 +28,14 @@ func GeneratePrivateKey() *ecdsa.PrivateKey {
 	return key
 }
 
+func GeneratePrivateKeyFromHex(h string) *ecdsa.PrivateKey {
+	key, err := crypto.HexToECDSA(h)
+	if err != nil {
+		return nil
+	}
+	return key
+}
+
 func PadBytes(data []byte, size int) []byte {
 	padded := make([]byte, size)
 
