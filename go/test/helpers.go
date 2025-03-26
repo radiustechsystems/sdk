@@ -56,9 +56,3 @@ func SkipIfNoRPCEndpoint(t *testing.T) string {
 	}
 	return RPCEndpoint
 }
-
-func ToByte32(s string) [32]byte {
-	var accessID [32]byte
-	copy(accessID[:], crypto.Keccak256([]byte(s)))
-	return accessID
-}
