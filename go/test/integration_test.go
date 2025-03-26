@@ -4,6 +4,7 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -11,76 +12,122 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/radiustechsystems/sdk/go/radius"
+	"github.com/radiustechsystems/sdk/go/src/radius"
 )
 
 func TestIntegration(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	var (
+		account *radius.Account
+		client  *radius.Client
+		err     error
+	)
 
-	endpoint := SkipIfNoEndpoint(t)
-	client, err := radius.NewClient(endpoint, radius.WithLogger(t.Logf))
-	require.NoError(t, err, "Failed to create client")
+	url := SkipIfNoRPCEndpoint(t)
+	key := SkipIfNoPrivateKey(t)
 
-	account := GetFundedTestAccount(t, client)
-	require.NotNil(t, account, "Failed to create account")
-	require.NotNil(t, account.Address(), "Account address should not be nil")
+	client, err = radius.NewClientWithLogging(url, t.Logf)
+	require.NoError(t, err, "Failed to create integration test client")
 
-	t.Run("Send", func(t *testing.T) {
-		initialBalance := SkipIfInsufficientTestAccountBalance(ctx, t, account, client)
-		recipient := CreateTestAccount(t, client)
-		amount := big.NewInt(100)
+	account, err = client.AccountFromPrivateKey(key)
+	require.NoError(t, err, "Failed to create integration test account")
 
-		// Send ETH from test account to recipient
-		var receipt *radius.Receipt
-		receipt, err = account.Send(ctx, client, recipient.Address(), amount)
-		assert.NoError(t, err, "Failed to send value to recipient")
-		require.NotNil(t, receipt, "Receipt should not be nil")
-		assert.Equal(t, account.Address(), receipt.From, "Unexpected sender address")
-		assert.Equal(t, recipient.Address(), receipt.To, "Unexpected recipient address")
-		assert.Equal(t, amount, receipt.Value, "Unexpected value")
+	balance := SkipIfInsufficientFunds(t, account)
+	t.Log(fmt.Sprintf("Integration test account balance: %s", balance.String()))
 
-		// Check sender balance
-		var senderBalance *big.Int
-		senderBalance, err = account.Balance(ctx, client)
-		assert.NoError(t, err, "Failed to get sender balance")
-		assert.Equal(t, initialBalance.Sub(initialBalance, amount), senderBalance, "Unexpected sender balance")
+	t.Run("Send value to another account", func(t *testing.T) {
+		var (
+			newBalance   *big.Int
+			receipt      *radius.Receipt
+			toBalance    *big.Int
+			toNewBalance *big.Int
+		)
 
-		// Check recipient balance
-		var recipientBalance *big.Int
-		recipientBalance, err = recipient.Balance(ctx, client)
-		assert.NoError(t, err, "Failed to get recipient balance")
-		assert.Equal(t, amount, recipientBalance, "Unexpected recipient balance")
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(30*time.Second))
+		defer cancel()
+
+		// Create a new account to send value to
+		toAddr := radius.NewAddressFromPrivateKey(radius.GeneratePrivateKey())
+		toBalance, err = client.BalanceAt(ctx, toAddr)
+
+		// Send value from account to recipient
+		receipt, err = client.Send(ctx, account.Signer, toAddr, OneGwei)
+		require.NoError(t, err, "Failed to send value to recipient")
+		assert.NotNil(t, receipt, "Receipt should not be nil")
+		assert.Equal(t, uint64(1), receipt.Status, "Receipt status should be 1")
+
+		// Confirm sender balance decreased
+		newBalance, err = account.Balance(ctx)
+		require.NoError(t, err, "Failed to get sender balance")
+		assert.Equal(t, balance.Sub(balance, OneGwei), newBalance, "Unexpected sender balance")
+
+		// Confirm recipient balance increased
+		toNewBalance, err = client.BalanceAt(ctx, toAddr)
+		require.NoError(t, err, "Failed to get recipient balance")
+		assert.Equal(t, toBalance.Add(toBalance, OneGwei), toNewBalance, "Unexpected recipient balance")
 	})
 
-	t.Run("SimpleStorage", func(t *testing.T) {
+	t.Run("Deploy and interact with a contract", func(t *testing.T) {
 		var (
 			contract *radius.Contract
 			receipt  *radius.Receipt
 			result   []interface{}
 		)
 
-		abi := radius.ABIFromJSON(SimpleStorageABI)
-		require.NotNil(t, abi, "Failed to parse ABI")
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(30*time.Second))
+		defer cancel()
 
-		bytecode := radius.BytecodeFromHex(SimpleStorageBin)
-		require.NotNil(t, bytecode, "Failed to parse bytecode")
-
-		contract, err = client.DeployContract(ctx, account.Signer, bytecode, abi)
+		contract, err = client.DeployContractFromStrings(ctx, account.Signer, SimpleStorageABI, SimpleStorageBin)
 		require.NoError(t, err, "Failed to deploy contract")
-		require.NotNil(t, contract.Address(), "Contract address should not be nil")
-		require.NotEqual(t, radius.Address{}, contract.Address(), "Contract address should not be empty")
+		assert.NotNil(t, contract, "Contract should not be nil")
+		assert.NotNil(t, contract.Address(), "Contract address should not be nil")
+		assert.NotEqual(t, radius.Address{}, contract.Address(), "Contract address should not be empty")
 
-		value := big.NewInt(42)
-		receipt, err = contract.Execute(ctx, client, account.Signer, "set", value)
-		assert.NoError(t, err, "Failed to call contract method")
+		// Set value in contract
+		expectedValue := big.NewInt(42)
+		receipt, err = contract.Exec(ctx, account.Signer, "set", expectedValue)
+		require.NoError(t, err, "Failed to execute contract method")
 		assert.NotNil(t, receipt, "Receipt should not be nil")
-		assert.Equal(t, account.Address(), receipt.From, "Unexpected from address")
-		assert.Equal(t, contract.Address(), receipt.To, "Unexpected to address")
+		assert.Equal(t, uint64(1), receipt.Status, "Receipt status should be 1")
 
-		result, err = contract.Call(ctx, client, "get")
-		assert.NoError(t, err, "Failed to call contract method")
-		assert.Len(t, result, 1, "Unexpected result length")
-		assert.Equal(t, value, result[0].(*big.Int), "Unexpected result value")
+		// Get value from contract
+		result, err = contract.Call(ctx, "get")
+		require.NoError(t, err, "Failed to call contract method")
+		assert.Equal(t, expectedValue, result[0], "Unexpected contract value")
+	})
+
+	t.Run("Interact with a previously deployed contract", func(t *testing.T) {
+		var (
+			c        *radius.Contract
+			contract *radius.Contract
+			receipt  *radius.Receipt
+			result   []interface{}
+		)
+
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(30*time.Second))
+		defer cancel()
+
+		c, err = client.DeployContractFromStrings(ctx, account.Signer, SimpleStorageABI, SimpleStorageBin)
+		require.NoError(t, err, "Failed to deploy contract")
+		require.NotNil(t, c, "Contract should not be nil")
+
+		contractAddr := *c.Address()
+		require.NotNil(t, contractAddr, "Contract address should not be nil")
+		require.NotEqual(t, radius.Address{}, contractAddr, "Contract address should not be empty")
+
+		// Create a new contract instance using the address of the previously deployed contract
+		contract = radius.NewContract(contractAddr, c.ABI, client)
+		assert.Equal(t, contractAddr, *contract.Address(), "Unexpected contract address")
+
+		// Set value in contract
+		expectedValue := big.NewInt(42)
+		receipt, err = contract.Exec(ctx, account.Signer, "set", expectedValue)
+		require.NoError(t, err, "Failed to execute contract method")
+		assert.NotNil(t, receipt, "Receipt should not be nil")
+		assert.Equal(t, uint64(1), receipt.Status, "Receipt status should be 1")
+
+		// Get value from contract
+		result, err = contract.Call(ctx, "get")
+		require.NoError(t, err, "Failed to call contract method")
+		assert.Equal(t, expectedValue, result[0], "Unexpected contract value")
 	})
 }
