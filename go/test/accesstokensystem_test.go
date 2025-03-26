@@ -40,18 +40,16 @@ func TestAccessTokenSystemIntegration_Deployment(t *testing.T) {
 	t.Log("Provider account balance:", balance.String())
 
 	var (
-		tokenSystem  *radius.Contract
-		receipt      *radius.Receipt
-		tierId       uint64 = 1
-		price        *big.Int
-		ttl          *big.Int
-		metadata     string
-		active       bool
-		result       []interface{}
-		tierPrice    *big.Int
-		tierTTL      *big.Int
-		tierActive   bool
-		tierMetadata string
+		tokenSystem *radius.Contract
+		receipt     *radius.Receipt
+		tierId      uint64 = 1
+		price       *big.Int
+		ttl         *big.Int
+		active      bool
+		result      []interface{}
+		tierPrice   *big.Int
+		tierTTL     *big.Int
+		tierActive  bool
 	)
 
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(30*time.Second))
@@ -59,7 +57,6 @@ func TestAccessTokenSystemIntegration_Deployment(t *testing.T) {
 
 	price = big.NewInt(1000000000) // 1 Gwei
 	ttl = big.NewInt(86400)        // 1 day in seconds
-	metadata = "https://example.com/api/token/1.json"
 	active = true
 
 	// Deploy AccessTokenSystem
@@ -68,7 +65,7 @@ func TestAccessTokenSystemIntegration_Deployment(t *testing.T) {
 		provider.Signer,
 		AccessTokenSystemABI,
 		AccessTokenSystemBin,
-		"https://example.com/api/token/{id}.json", // Base URI
+		"https://example.com/api/token/{id}.json",
 	)
 	require.NoError(t, err, "Failed to deploy AccessTokenSystem")
 	assert.NotNil(t, tokenSystem, "TokenSystem should not be nil")
@@ -83,7 +80,6 @@ func TestAccessTokenSystemIntegration_Deployment(t *testing.T) {
 		price,
 		ttl,
 		active,
-		metadata,
 	)
 	require.NoError(t, err, "Failed to create tier")
 	assert.NotNil(t, receipt, "Receipt should not be nil")
@@ -92,17 +88,15 @@ func TestAccessTokenSystemIntegration_Deployment(t *testing.T) {
 	// Check tier info
 	result, err = tokenSystem.Call(ctx, "tiers", big.NewInt(int64(tierId)))
 	require.NoError(t, err, "Failed to get tier info")
-	require.Len(t, result, 4, "tiers should return 4 values")
+	require.Len(t, result, 3, "tiers should return 3 values")
 
 	tierPrice = result[0].(*big.Int)
 	tierTTL = result[1].(*big.Int)
 	tierActive = result[2].(bool)
-	tierMetadata = result[3].(string)
 
 	assert.Equal(t, price, tierPrice, "Unexpected price")
 	assert.Equal(t, ttl, tierTTL, "Unexpected TTL")
 	assert.Equal(t, active, tierActive, "Unexpected active status")
-	assert.Equal(t, metadata, tierMetadata, "Unexpected metadata")
 
 	// Test setTierStatus as consumer (value should not change)
 	receipt, err = tokenSystem.Exec(
@@ -174,7 +168,6 @@ func TestAccessTokenSystemIntegration_PurchaseAndUseAccessToken(t *testing.T) {
 		tierId      uint64 = 1
 		price       *big.Int
 		ttl         *big.Int
-		metadata    string
 		active      bool
 		isValid     bool
 		expiryTime  *big.Int
@@ -188,7 +181,6 @@ func TestAccessTokenSystemIntegration_PurchaseAndUseAccessToken(t *testing.T) {
 
 	price = big.NewInt(1000000000) // 1 Gwei
 	ttl = big.NewInt(86400)        // 1 day in seconds
-	metadata = "https://example.com/api/token/1.json"
 	active = true
 
 	// Deploy AccessTokenSystem
@@ -197,7 +189,7 @@ func TestAccessTokenSystemIntegration_PurchaseAndUseAccessToken(t *testing.T) {
 		provider.Signer,
 		AccessTokenSystemABI,
 		AccessTokenSystemBin,
-		"https://example.com/api/token/{id}.json", // Base URI
+		"https://example.com/api/token/{id}.json",
 	)
 	require.NoError(t, err, "Failed to deploy AccessTokenSystem")
 
@@ -210,7 +202,6 @@ func TestAccessTokenSystemIntegration_PurchaseAndUseAccessToken(t *testing.T) {
 		price,
 		ttl,
 		active,
-		metadata,
 	)
 	require.NoError(t, err, "Failed to create tier")
 
@@ -322,7 +313,6 @@ func TestAccessTokenSystemIntegration_VerifyAccessToken(t *testing.T) {
 		tierId        uint64 = 1
 		price         *big.Int
 		ttl           *big.Int
-		metadata      string
 		active        bool
 		verifyResult  bool
 		invalidResult bool
@@ -336,7 +326,6 @@ func TestAccessTokenSystemIntegration_VerifyAccessToken(t *testing.T) {
 
 	price = big.NewInt(1000000000) // 1 Gwei
 	ttl = big.NewInt(86400)        // 1 day in seconds
-	metadata = "https://example.com/api/token/1.json"
 	active = true
 
 	// Deploy AccessTokenSystem
@@ -345,7 +334,7 @@ func TestAccessTokenSystemIntegration_VerifyAccessToken(t *testing.T) {
 		provider.Signer,
 		AccessTokenSystemABI,
 		AccessTokenSystemBin,
-		"https://example.com/api/token/{id}.json", // Base URI
+		"https://example.com/api/token/{id}.json",
 	)
 	require.NoError(t, err, "Failed to deploy AccessTokenSystem")
 
@@ -358,7 +347,6 @@ func TestAccessTokenSystemIntegration_VerifyAccessToken(t *testing.T) {
 		price,
 		ttl,
 		active,
-		metadata,
 	)
 	require.NoError(t, err, "Failed to create tier")
 	require.NotNil(t, receipt, "Receipt should not be nil")
@@ -484,7 +472,6 @@ func TestAccessTokenSystemIntegration_BatchOperations(t *testing.T) {
 		tierIds     []*big.Int
 		prices      []*big.Int
 		ttls        []*big.Int
-		metadata    []string
 		actives     []bool
 		totalPrice  *big.Int
 		isValid     bool
@@ -508,11 +495,6 @@ func TestAccessTokenSystemIntegration_BatchOperations(t *testing.T) {
 		big.NewInt(172800), // 2 days
 		big.NewInt(259200), // 3 days
 	}
-	metadata = []string{
-		"https://example.com/api/token/10.json",
-		"https://example.com/api/token/20.json",
-		"https://example.com/api/token/30.json",
-	}
 	actives = []bool{true, true, true}
 	totalPrice = big.NewInt(0)
 
@@ -522,7 +504,7 @@ func TestAccessTokenSystemIntegration_BatchOperations(t *testing.T) {
 		provider.Signer,
 		AccessTokenSystemABI,
 		AccessTokenSystemBin,
-		"https://example.com/api/token/{id}.json", // Base URI
+		"https://example.com/api/token/{id}.json",
 	)
 	require.NoError(t, err, "Failed to deploy AccessTokenSystem")
 
@@ -536,7 +518,6 @@ func TestAccessTokenSystemIntegration_BatchOperations(t *testing.T) {
 			prices[i],
 			ttls[i],
 			actives[i],
-			metadata[i],
 		)
 		require.NoError(t, err, "Failed to create tier")
 		totalPrice = totalPrice.Add(totalPrice, prices[i])
