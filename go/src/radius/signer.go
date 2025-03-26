@@ -20,7 +20,7 @@ type Signer interface {
 type PrivateKeySigner struct {
 	chainID    *big.Int
 	privateKey *ecdsa.PrivateKey
-	signer     types.EIP155Signer
+	signer     types.Signer
 }
 
 func NewPrivateKeySigner(privateKey *ecdsa.PrivateKey, chainID *big.Int) Signer {
