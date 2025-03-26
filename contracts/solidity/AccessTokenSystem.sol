@@ -15,7 +15,6 @@ contract AccessTokenSystem is ERC1155, Ownable {
         uint256 price;
         uint256 ttl;
         bool active;
-        string metadata; // JSON metadata for the tier
     }
 
     // Token expiration tracking
@@ -35,7 +34,7 @@ contract AccessTokenSystem is ERC1155, Ownable {
     event AccessPurchased(address indexed consumer, uint256 indexed tierId, uint256 expiryTime);
     event BatchAccessPurchased(address indexed consumer, uint256[] tierIds, uint256[] expiryTimes);
     event AccessRevoked(address indexed consumer, uint256 indexed tierId);
-    event TierCreated(uint256 indexed tierId, uint256 price, uint256 ttl, string metadata);
+    event TierCreated(uint256 indexed tierId, uint256 price, uint256 ttl);
     event TierStatusChanged(uint256 indexed tierId, bool active);
 
     constructor(string memory _uri) ERC1155(_uri) Ownable(msg.sender) {
@@ -52,22 +51,20 @@ contract AccessTokenSystem is ERC1155, Ownable {
     }
 
     /**
-     * @dev Create a new access tier with metadata
+     * @dev Create a new access tier
      * @param tierId The ID for this tier
      * @param price Price in wei
      * @param ttl Time to live in seconds
      * @param active Whether this tier is available for purchase
-     * @param metadata IPFS or other URI pointing to JSON metadata
      */
     function createTier(
         uint256 tierId,
         uint256 price,
         uint256 ttl,
-        bool active,
-        string calldata metadata
-    ) external onlyOwner {
-        tiers[tierId] = AccessTier(price, ttl, active, metadata);
-        emit TierCreated(tierId, price, ttl, metadata);
+        bool active
+	) external onlyOwner {
+        tiers[tierId] = AccessTier(price, ttl, active);
+        emit TierCreated(tierId, price, ttl);
     }
 
     /**
@@ -148,16 +145,6 @@ contract AccessTokenSystem is ERC1155, Ownable {
         payable(owner()).transfer(totalCost);
 
         emit BatchAccessPurchased(msg.sender, tierIds, expiryTimes);
-    }
-
-    /**
-     * @dev Get the URI for a specific token
-     * @param id Token ID to get URI for
-     */
-    function uri(uint256 id) public view virtual override returns (string memory) {
-        AccessTier memory tier = tiers[id];
-        require(bytes(tier.metadata).length > 0, "URI not set for this token");
-        return tier.metadata;
     }
 
     /**
