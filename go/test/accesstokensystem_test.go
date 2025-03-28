@@ -376,7 +376,6 @@ func TestAccessTokenSystemIntegration_VerifyAccessToken(t *testing.T) {
 	result, err := tokenSystem.Call(
 		ctx,
 		"verifyAccess",
-		consumer.Address(),
 		big.NewInt(int64(tierId)),
 		challenge,
 		consumerSignature,
@@ -393,7 +392,6 @@ func TestAccessTokenSystemIntegration_VerifyAccessToken(t *testing.T) {
 	result, err = tokenSystem.Call(
 		ctx,
 		"verifyAccess",
-		consumer.Address(),
 		big.NewInt(int64(tierId)),
 		challenge,
 		providerSignature,
@@ -408,7 +406,6 @@ func TestAccessTokenSystemIntegration_VerifyAccessToken(t *testing.T) {
 	result, err = tokenSystem.Call(
 		ctx,
 		"verifyAccess",
-		consumer.Address(),
 		big.NewInt(int64(tierId)),
 		modifiedChallenge,
 		consumerSignature,
@@ -431,7 +428,6 @@ func TestAccessTokenSystemIntegration_VerifyAccessToken(t *testing.T) {
 	result, err = tokenSystem.Call(
 		ctx,
 		"verifyAccess",
-		consumer.Address(),
 		big.NewInt(int64(tierId)),
 		challenge,
 		consumerSignature,
