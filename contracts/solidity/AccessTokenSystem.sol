@@ -186,30 +186,22 @@ contract AccessTokenSystem is ERC1155, Ownable {
 
 	/**
 	 * @dev Verify a signed message from a user to validate access off-chain
-	 * @param user Address of the user
 	 * @param tierId ID of the access tier
 	 * @param challenge A string challenge to prevent replay attacks
 	 * @param signature Signature from the user
 	 */
 	function verifyAccess(
-		address user,
 		uint256 tierId,
 		string calldata challenge,
 		bytes calldata signature
 	) external view returns (bool) {
-		// First check if access is valid
-		if (!isValid(user, tierId)) {
-			return false;
-		}
-
-		// Create the message hash
+		// Recover signer from signature
 		bytes32 messageHash = keccak256(abi.encodePacked(
 			"\x19Ethereum Signed Message:\n",
 			Strings.toString(bytes(challenge).length),
 			challenge
 		));
 
-		// Recover signer from signature
 		bytes32 r;
 		bytes32 s;
 		uint8 v;
@@ -230,8 +222,8 @@ contract AccessTokenSystem is ERC1155, Ownable {
 
 		address recoveredSigner = ecrecover(messageHash, v, r, s);
 
-		// Verify the signer is the user
-		return recoveredSigner == user;
+		// Check if the recovered address has valid access
+		return isValid(recoveredSigner, tierId);
 	}
 
     /**
